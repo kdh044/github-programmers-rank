@@ -1,6 +1,3 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-
 name: github-programmers-rank
 
 on:
@@ -9,60 +6,42 @@ on:
   pull_request:
     branches: [ "master" ]
   schedule:
-    - cron: '0 5 * * 1-5'
+    - cron: '0 5 * * *'  # 매일 새벽 5시 실행
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         node-version: [14.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      env: 
-        PROGRAMMERS_TOKEN_ID: ${{ secrets.PROGRAMMERS_TOKEN_ID }}
-        PROGRAMMERS_TOKEN_PW: ${{ secrets.PROGRAMMERS_TOKEN_PW }}
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run:  echo ${{ secrets.PROGRAMMERS_TOKEN_ID }}
-    - run: npm install
-    - run: npm run build
-    - run: |
-        touch .env
-        echo PROGRAMMERS_TOKEN_ID=${{ secrets.PROGRAMMERS_TOKEN_ID }} >> .env
-        echo PROGRAMMERS_TOKEN_PW=${{ secrets.PROGRAMMERS_TOKEN_PW }} >> .env
-        npm run start
+      - uses: actions/checkout@v3
 
-  cron:
-    runs-on: ubuntu-latest
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
 
-    strategy:
-      matrix:
-        node-version: [14.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+      - run: npm install
+      - run: npm run build
 
-    steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      env: 
-        PROGRAMMERS_TOKEN_ID: ${{ secrets.PROGRAMMERS_TOKEN_ID }}
-        PROGRAMMERS_TOKEN_PW: ${{ secrets.PROGRAMMERS_TOKEN_PW }}
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run:  echo ${{ secrets.PROGRAMMERS_TOKEN_ID }}
-    - run: npm install
-    - run: npm run build
-    - run: |
-        touch .env
-        echo PROGRAMMERS_TOKEN_ID=${{ secrets.PROGRAMMERS_TOKEN_ID }} >> .env
-        echo PROGRAMMERS_TOKEN_PW=${{ secrets.PROGRAMMERS_TOKEN_PW }} >> .env
-        npm run start
-        
+      - run: |
+          touch .env
+          echo PROGRAMMERS_TOKEN_ID=${{ secrets.PROGRAMMERS_TOKEN_ID }} >> .env
+          echo PROGRAMMERS_TOKEN_PW=${{ secrets.PROGRAMMERS_TOKEN_PW }} >> .env
+          npm run start
+
+      # ✅ Git Config (작성자 정보 세팅)
+      - name: Git Config
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # ✅ 결과 파일 커밋 & 푸시
+      - name: Commit and Push result.svg
+        run: |
+          git add lib/result.svg
+          git commit -m "Update result.svg" || echo "No changes"
+          git push https://kdh044:${{ secrets.MY_GITHUB_TOKEN }}@github.com/kdh044/github-programmers-rank.git
