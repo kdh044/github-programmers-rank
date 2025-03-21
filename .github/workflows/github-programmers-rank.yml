@@ -3,14 +3,13 @@ name: github-programmers-rank
 on:
   push:
     branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
   schedule:
-    - cron: '0 5 * * *'  # 매일 새벽 5시 실행
+    - cron: '0 0 * * *'  # 매일 자정 실행
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     strategy:
       matrix:
         node-version: [14.x]
@@ -24,7 +23,10 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
+      - run: echo "Running npm install"
       - run: npm install
+
+      - run: echo "Running build"
       - run: npm run build
 
       - run: |
@@ -33,15 +35,10 @@ jobs:
           echo PROGRAMMERS_TOKEN_PW=${{ secrets.PROGRAMMERS_TOKEN_PW }} >> .env
           npm run start
 
-      # ✅ Git Config (작성자 정보 세팅)
-      - name: Git Config
+      - name: Push changes to GitHub
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      # ✅ 결과 파일 커밋 & 푸시
-      - name: Commit and Push result.svg
-        run: |
-          git add lib/result.svg
-          git commit -m "Update result.svg" || echo "No changes"
+          git config --global user.email "github-programmers-rank@example.com"
+          git config --global user.name "github-programmers-rank[bot]"
+          git add .
+          git commit -m "프로그래머스 순위 SVG 업데이트" || echo "No changes to commit"
           git push https://kdh044:${{ secrets.MY_GITHUB_TOKEN }}@github.com/kdh044/github-programmers-rank.git
